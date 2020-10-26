@@ -225,7 +225,7 @@ void EmbUI::begin(){
   //server.addHandler(new SPIFFSEditor(LittleFS, http_username,http_password));
 #elif defined(ESP8266)
   //server.addHandler(new SPIFFSEditor(http_username,http_password, LittleFS));
-  server.addHandler(new SPIFFSEditor(F("esp8266"),F("esp8266"), LittleFS));
+  //server.addHandler(new SPIFFSEditor(F("esp8266"),F("esp8266"), LittleFS));
 #endif
 
 /*
@@ -411,3 +411,23 @@ void EmbUI::handle(){
     timer_pub = millis();
     send_pub();
 }
+
+void EmbUI::set_callback(CallBack set, CallBack action, callback_function_t callback){
+
+    switch (action){
+        case CallBack::STAConnected :
+            set ? _cb_STAConnected = std::move(callback) : _cb_STAConnected = nullptr;
+            break;
+        case CallBack::STADisconnected :
+            set ? _cb_STADisconnected = std::move(callback) : _cb_STADisconnected = nullptr;
+            break;
+        case CallBack::STAGotIP :
+            set ? _cb_STAGotIP = std::move(callback) : _cb_STAGotIP = nullptr;
+            break;
+        case CallBack::TimeSet :
+            set ? timeProcessor.attach_callback(callback) : timeProcessor.dettach_callback();
+            break;
+        default:
+            return;
+    }
+};

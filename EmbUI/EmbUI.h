@@ -130,6 +130,16 @@ void __attribute__((weak)) uploadProgress(size_t len, size_t total);
   static const char PGnameManuf[] PROGMEM = TOSTRING(__SSDPMANUF);
 #endif
 
+// Callback enums
+enum CallBack : uint8_t {
+    detach = (0U),
+    attach = (1U),
+    STAConnected,
+    STADisconnected,
+    STAGotIP,
+    TimeSet
+};
+
 class EmbUI
 {
     // оптимизация расхода памяти, все битовые флаги и другие потенциально "сжимаемые" переменные скидываем сюда
@@ -224,6 +234,16 @@ class EmbUI
     void send_pub();
     String id(const String &tpoic);
 
+    /**
+     * Подключение к WiFi AP в клиентском режиме
+     */
+    void wifi_connect(const char *ssid=nullptr, const char *pwd=nullptr);
+
+
+    void set_callback(CallBack set, CallBack action, callback_function_t callback=nullptr);
+
+
+
   private:
     void led_handle();
     void led_on();
@@ -241,10 +261,6 @@ class EmbUI
     /**
       * устанавлием режим WiFi
       */
-    /**
-     * Подключение к WiFi AP в клиентском режиме
-     */
-    void wifi_connect(const char *ssid=nullptr, const char *pwd=nullptr);
 #ifdef ESP8266
     WiFiEventHandler e1, e2, e3;
     WiFiMode wifi_mode;           // используется в gpio led_handle (to be removed)
@@ -275,6 +291,11 @@ class EmbUI
     String incomingPacket;
     String udpMessage; // буфер для сообщений Обмена по UDP
     unsigned long astimer;
+
+    // callback pointers
+    callback_function_t _cb_STAConnected = nullptr;
+    callback_function_t _cb_STADisconnected = nullptr;
+    callback_function_t _cb_STAGotIP = nullptr;
 
 #ifdef USE_SSDP
     void ssdp_begin() {

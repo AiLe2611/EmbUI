@@ -21,3 +21,5 @@
 #else
 	#define LOG(func, ...) ;
 #endif
+
+typedef std::function<void(void)> callback_function_t;

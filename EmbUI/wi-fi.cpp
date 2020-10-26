@@ -13,6 +13,8 @@
 void EmbUI::onSTAConnected(WiFiEventStationModeConnected ipInfo)
 {
     LOG(printf_P, PSTR("UI WiFi: connected to %s\r\n"), ipInfo.ssid.c_str());
+    if(_cb_STAConnected)
+        _cb_STAConnected();        // execule callback
 }
 
 void EmbUI::onSTAGotIP(WiFiEventStationModeGotIP ipInfo)
@@ -23,6 +25,8 @@ void EmbUI::onSTAGotIP(WiFiEventStationModeGotIP ipInfo)
     LOG(printf_P, PSTR("WiFi: Got IP: %s\r\n"), ipInfo.ip.toString().c_str());
     setup_mDns();
     timeProcessor.onSTAGotIP(ipInfo);
+    if(_cb_STAGotIP)
+        _cb_STAGotIP();        // execule callback
 }
 
 void EmbUI::onSTADisconnected(WiFiEventStationModeDisconnected event_info)
@@ -41,6 +45,8 @@ void EmbUI::onSTADisconnected(WiFiEventStationModeDisconnected event_info)
     } );
 
     timeProcessor.onSTADisconnected(event_info);
+    if(_cb_STADisconnected)
+        _cb_STADisconnected();        // execule callback
 }
 
 void EmbUI::setup_mDns(){
