@@ -85,8 +85,15 @@ public:
      * обратный вызов при подключении к WiFi точке доступа
      * запускает синхронизацию времени
      */
+#ifdef ESP8266
     void onSTAGotIP(WiFiEventStationModeGotIP ipInfo);
     void onSTADisconnected(WiFiEventStationModeDisconnected event_info);
+#endif
+
+#ifdef ESP32
+    void WiFiEvent(WiFiEvent_t event, system_event_info_t info);
+#endif
+
 
     /**
      * установка строки с текущей временной зоной в текстовом виде,

@@ -6,6 +6,15 @@
 #include "EmbUI.h"
 
 void EmbUI::save(const char *_cfg, bool force){
+
+//void listDir(fs::FS &fs, const char * dirname, uint8_t levels){
+//void DoTest(FS *fs) { 
+    if ((sysData.isNeedSave || force)){
+      LittleFS.begin();
+    } else {
+        return;
+    }
+
     if ((sysData.isNeedSave || force) && LittleFS.begin()) {
         File configFile;
         if (_cfg == nullptr) {

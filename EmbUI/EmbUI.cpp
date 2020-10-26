@@ -222,7 +222,7 @@ void EmbUI::begin(){
 #endif
 
 #ifdef ESP32
-  server.addHandler(new SPIFFSEditor(LittleFS, http_username,http_password));
+  //server.addHandler(new SPIFFSEditor(LittleFS, http_username,http_password));
 #elif defined(ESP8266)
   //server.addHandler(new SPIFFSEditor(http_username,http_password, LittleFS));
   server.addHandler(new SPIFFSEditor(F("esp8266"),F("esp8266"), LittleFS));
@@ -293,7 +293,8 @@ void EmbUI::begin(){
         request->send(200, FPSTR(PGmimetxt), out);
     });
 
-    // Simple Firmware Update Form
+#ifndef ESP32
+    // Simple Firmware Update Form (ESP32 ota broken)
     server.on(PSTR("/update"), HTTP_GET, [](AsyncWebServerRequest *request){
         request->send(200, FPSTR(PGmimehtml), F("<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>"));
     });
@@ -309,9 +310,7 @@ void EmbUI::begin(){
         }
     },[](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
         if (!index) {
-#ifndef ESP32
             Update.runAsync(true);
-#endif
             int type = (data[0] == 0xe9 || data[0] == 0x1f)? U_FLASH : U_FS;
             size_t size = (type == U_FLASH)? ((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000) : (uintptr_t)&_FS_end - (uintptr_t)&_FS_start;
             LOG(printf_P, PSTR("Update %s Start (%u)\n"), (type == U_FLASH)? F("Firmware") : F("Filesystem"), request->contentLength());
@@ -334,6 +333,7 @@ void EmbUI::begin(){
         }
         uploadProgress(index + len, request->contentLength());
     });
+#endif
 
     //First request will return 0 results unless you start scan from somewhere else (loop/setup)
     //Do not request more often than 3-5 seconds

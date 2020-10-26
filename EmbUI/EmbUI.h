@@ -8,17 +8,22 @@
 
 #include "globals.h"
 
+#include <FS.h>
+
 #ifdef ESP8266
-#include <ESPAsyncTCP.h>
- #include <FS.h>
- #include <LittleFS.h>
-#else
- #include <AsyncTCP.h>
+ #include <ESPAsyncTCP.h>
  #include <LittleFS.h>
 #endif
 
+#ifdef ESP32
+ #include <AsyncTCP.h>
+ #include <LITTLEFS.h>
+ #define FORMAT_LITTLEFS_IF_FAILED true
+ #define LittleFS LITTLEFS
+#endif
+
 #include <ESPAsyncWebServer.h>
-#include <SPIFFSEditor.h>
+//#include <SPIFFSEditor.h>
 #include <ArduinoJson.h>
 
 #ifdef ESP8266
@@ -215,10 +220,6 @@ class EmbUI
     void publish(const String &topic, const String &payload);
     void publish(const String &topic, const String &payload, bool retained);
     void remControl();
-    /**
-     * Подключение к WiFi AP в клиентском режиме
-     */
-    void wifi_connect(const char *ssid=nullptr, const char *pwd=nullptr);
     void post(JsonObject data);
     void send_pub();
     String id(const String &tpoic);
@@ -240,14 +241,25 @@ class EmbUI
     /**
       * устанавлием режим WiFi
       */
+    /**
+     * Подключение к WiFi AP в клиентском режиме
+     */
+    void wifi_connect(const char *ssid=nullptr, const char *pwd=nullptr);
+#ifdef ESP8266
     WiFiEventHandler e1, e2, e3;
-    WiFiMode wifi_mode;   // используется в gpio led_handle (to be removed)
+    WiFiMode wifi_mode;           // используется в gpio led_handle (to be removed)
     void wifi_setmode(WiFiMode mode);
-    void connectToMqtt();
-    void onMqttConnect();
     void onSTAConnected(WiFiEventStationModeConnected ipInfo);
     void onSTAGotIP(WiFiEventStationModeGotIP ipInfo);
     void onSTADisconnected(WiFiEventStationModeDisconnected event_info);
+#endif
+
+#ifdef ESP32
+    void WiFiEvent(WiFiEvent_t event);
+#endif
+
+    void connectToMqtt();
+    void onMqttConnect();
     void setup_mDns();
     Ticker embuischedw;        // планировщик WiFi
 

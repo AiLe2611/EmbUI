@@ -5,11 +5,11 @@
 
 //bool _wifi_connected = false;
 #include "EmbUI.h"
-#include "user_interface.h"
 #include "wi-fi.h"
 #include "timeProcessor.h"
 
 #ifdef ESP8266
+#include "user_interface.h"
 void EmbUI::onSTAConnected(WiFiEventStationModeConnected ipInfo)
 {
     LOG(printf_P, PSTR("UI WiFi: connected to %s\r\n"), ipInfo.ssid.c_str());
@@ -23,6 +23,24 @@ void EmbUI::onSTAGotIP(WiFiEventStationModeGotIP ipInfo)
     LOG(printf_P, PSTR("WiFi: Got IP: %s\r\n"), ipInfo.ip.toString().c_str());
     setup_mDns();
     timeProcessor.onSTAGotIP(ipInfo);
+}
+
+void EmbUI::onSTADisconnected(WiFiEventStationModeDisconnected event_info)
+{
+    if (embuischedw.active() && (WiFi.getMode()==WIFI_AP || WiFi.getMode()==WIFI_AP_STA || !sysData.wifi_sta))
+        return;
+    
+    LOG(printf_P, PSTR("UI WiFi: Disconnected from SSID: %s, reason: %d\n"), event_info.ssid.c_str(), event_info.reason);
+    sysData.wifi_sta = false;
+
+    embuischedw.once_scheduled(WIFI_CONNECT_TIMEOUT, [this](){
+        sysData.wifi_sta = false;
+        LOG(println, F("UI WiFi: enabling internal AP"));
+        wifi_setmode(WIFI_AP);  // Enable internal AP if station connection is lost
+        embuischedw.once_scheduled(WIFI_RECONNECT_TIMER, [this](){wifi_setmode(WIFI_AP_STA); WiFi.begin(); setup_mDns();} );
+    } );
+
+    timeProcessor.onSTADisconnected(event_info);
 }
 
 void EmbUI::setup_mDns(){
@@ -43,36 +61,23 @@ void EmbUI::setup_mDns(){
         Serial.printf_P(PSTR("mDNS responder started: %s.local\n"),tmpbuf);
     }
 }
+#endif  //ESP8266
 
-void EmbUI::onSTADisconnected(WiFiEventStationModeDisconnected event_info)
-{
-    if (embuischedw.active() && (WiFi.getMode()==WIFI_AP || WiFi.getMode()==WIFI_AP_STA || !sysData.wifi_sta))
-        return;
-    
-    LOG(printf_P, PSTR("UI WiFi: Disconnected from SSID: %s, reason: %d\n"), event_info.ssid.c_str(), event_info.reason);
-    sysData.wifi_sta = false;
-
-    embuischedw.once_scheduled(WIFI_CONNECT_TIMEOUT, [this](){
-        sysData.wifi_sta = false;
-        LOG(println, F("UI WiFi: enabling internal AP"));
-        wifi_setmode(WIFI_AP);  // Enable internal AP if station connection is lost
-        embuischedw.once_scheduled(WIFI_RECONNECT_TIMER, [this](){wifi_setmode(WIFI_AP_STA); WiFi.begin(); setup_mDns();} );
-    } );
-
-    timeProcessor.onSTADisconnected(event_info);
-}
-#else
+#ifdef ESP32
 // need to test it under ESP32 (might not need any scheduler to handle both Client and AP at the same time)
-void WiFiEvent(WiFiEvent_t event, system_event_info_t info)
+void WiFiEvent(WiFiEvent_t event)   // , WiFiEventInfo_t info
 {
     switch (event)
     {
-    case SYSTEM_EVENT_STA_START:
-        LOG(println, F("Station Mode Started"));
+    case SYSTEM_EVENT_AP_START:
+        LOG(println, F("UI WiFi: Access-point started"));
+        break;
+    case SYSTEM_EVENT_STA_CONNECTED:
+        LOG(println, F("UI WiFi: Station connected"));
         break;
     case SYSTEM_EVENT_STA_GOT_IP:
         WiFi.mode(WIFI_STA);            // Shutdown internal Access Point
-        LOG(printf_P, PSTR("Connected to: %s, got IP: %s\n", WiFi.SSID(), WiFi.localIP());
+        LOG(printf_P, PSTR("Connected to: %s, got IP: %s\n"), WiFi.SSID(), WiFi.localIP());  // IPAddress(info.got_ip.ip_info.ip.addr)
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
         LOG(printf_P, PSTR("Disconnected from SSID: %s, reason: %d\n"), event_info.ssid.c_str(), event_info.reason);
@@ -85,7 +90,7 @@ void WiFiEvent(WiFiEvent_t event, system_event_info_t info)
         break;
     }
 }
-#endif
+#endif  //ESP32
 
 void EmbUI::wifi_connect(const char *ssid, const char *pwd)
 {
