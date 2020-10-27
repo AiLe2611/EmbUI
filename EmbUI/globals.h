@@ -22,4 +22,8 @@
 	#define LOG(func, ...) ;
 #endif
 
+#ifdef ESP32
+ #include <functional>
+#endif
+
 typedef std::function<void(void)> callback_function_t;

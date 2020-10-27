@@ -245,7 +245,7 @@ class EmbUI
 
 
   private:
-    void led_handle();
+    //void led_handle();        // пока убираю
     void led_on();
     void led_off();
     void led_inv();
@@ -261,17 +261,18 @@ class EmbUI
     /**
       * устанавлием режим WiFi
       */
+    void wifi_setmode(WiFiMode_t mode);
+
 #ifdef ESP8266
     WiFiEventHandler e1, e2, e3;
     WiFiMode wifi_mode;           // используется в gpio led_handle (to be removed)
-    void wifi_setmode(WiFiMode mode);
     void onSTAConnected(WiFiEventStationModeConnected ipInfo);
     void onSTAGotIP(WiFiEventStationModeGotIP ipInfo);
     void onSTADisconnected(WiFiEventStationModeDisconnected event_info);
 #endif
 
 #ifdef ESP32
-    void WiFiEvent(WiFiEvent_t event);
+    void WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info);
 #endif
 
     void connectToMqtt();

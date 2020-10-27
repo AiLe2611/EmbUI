@@ -204,8 +204,8 @@ void EmbUI::init(){
         e1 = WiFi.onStationModeGotIP(std::bind(&EmbUI::onSTAGotIP, this, std::placeholders::_1));
         e2 = WiFi.onStationModeDisconnected(std::bind(&EmbUI::onSTADisconnected, this, std::placeholders::_1));
         e3 = WiFi.onStationModeConnected(std::bind(&EmbUI::onSTAConnected, this, std::placeholders::_1));
-    #else
-        WiFi.onEvent(std::bind(&EmbUI::WiFiEvent, this, std::placeholders::_1));
+    #elif defined ESP32
+        WiFi.onEvent(std::bind(&EmbUI::WiFiEvent, this, std::placeholders::_1, std::placeholders::_2));
     #endif
 
     // восстанавливаем настройки времени
@@ -287,7 +287,9 @@ void EmbUI::begin(){
     server.on(PSTR("/heap"), HTTP_GET, [this](AsyncWebServerRequest *request){
         String out = "Heap: "+String(ESP.getFreeHeap());
 #ifdef EMBUI_DEBUG
+    #ifdef ESP8266
         out += "\nFrac: " + String(getFragmentation());
+    #endif
         out += "\nClient: " + String(ws.count());
 #endif
         request->send(200, FPSTR(PGmimetxt), out);
@@ -401,7 +403,7 @@ void EmbUI::handle(){
     timer = millis();
 
     btn();
-    led_handle();
+    //led_handle();
     autosave();
     ws.cleanupClients(MAX_WS_CLIENTS);
 

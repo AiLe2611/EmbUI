@@ -5,6 +5,10 @@
 
 #include "EmbUI.h"
 
+#ifndef FORMAT_LITTLEFS_IF_FAILED
+ #define FORMAT_LITTLEFS_IF_FAILED false
+#endif
+
 void EmbUI::save(const char *_cfg, bool force){
 
 //void listDir(fs::FS &fs, const char * dirname, uint8_t levels){
@@ -47,7 +51,7 @@ void EmbUI::autosave(){
 }
 
 void EmbUI::load(const char *_cfg){
-    if (LittleFS.begin()) {
+    if (LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED)) {
         File configFile;
         if (_cfg == nullptr) {
             LOG(println, F("Load default main config file"));
@@ -71,6 +75,6 @@ void EmbUI::load(const char *_cfg){
             return;
         }
     } else {
-            LOG(println, F("Can't initialize LittleFS"));
+            LOG(println, F("UI: Can't initialize LittleFS"));
     }
 }

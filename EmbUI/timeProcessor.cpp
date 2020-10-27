@@ -225,7 +225,12 @@ void TimeProcessor::httprefreshtimer(const uint32_t delay){
         LOG(printf_P, PSTR("Schedule TZ refresh in %ld\n"), timer);
     }
 
-    _wrk.once_scheduled(timer, std::bind(&TimeProcessor::getTimeHTTP, this));
+    #ifdef ESP8266
+        _wrk.once_scheduled(timer, std::bind(&TimeProcessor::getTimeHTTP, this));
+    #elif defined ESP32
+        _wrk.once((float)timer, std::bind(&TimeProcessor::getTimeHTTP, this));
+    #endif
+
 }
 #endif
 
@@ -253,7 +258,7 @@ void TimeProcessor::onSTADisconnected(const WiFiEventStationModeDisconnected eve
 #endif  //ESP8266
 
 #ifdef ESP32
-void WiFiEvent(WiFiEvent_t event, system_event_info_t info){
+void TimeProcessor::WiFiEvent(WiFiEvent_t event, system_event_info_t info){
     switch (event)
     {
     case SYSTEM_EVENT_STA_GOT_IP:

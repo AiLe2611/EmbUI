@@ -36,8 +36,6 @@
 static const char PG_timeapi_tz_url[] PROGMEM  = "http://worldtimeapi.org/api/timezone/";
 static const char PG_timeapi_ip_url[] PROGMEM  = "http://worldtimeapi.org/api/ip";
 
-typedef std::function<void(void)> callback_function_t;
-
 class TimeProcessor
 {
 private:
