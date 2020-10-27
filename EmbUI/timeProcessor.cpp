@@ -14,12 +14,9 @@
 
 #ifdef ESP32
  #include <time.h>
- //#include "apps/sntp/sntp.h"
- #include "lwip/apps/sntp.h"
+ #include <lwip/apps/sntp.h>
  #include <HTTPClient.h>
-
-extern "C" void setTimeZone(long offset, int daylight);
-
+ //extern "C" void setTimeZone(long offset, int daylight = 0);
 #endif
 
 #ifndef TZONE
@@ -69,7 +66,7 @@ String TimeProcessor::getFormattedShortTime()
  * влияет, на запрос через http-api за временем в конкретной зоне,
  * вместо автоопределения по ip
  */
-void TimeProcessor::setTimezone(const char *var){
+void TimeProcessor::httpTimezone(const char *var){
   if (!var)
     return;
   tzone = var;
@@ -267,6 +264,7 @@ void TimeProcessor::WiFiEvent(WiFiEvent_t event, system_event_info_t info){
             // отложенный запрос смещения зоны через http-сервис
             httprefreshtimer(HTTPSYNC_DELAY);
         #endif
+        LOG(println, F("UI TIME: Starting sntp sync"));
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
         sntp_stop();
@@ -282,7 +280,7 @@ void TimeProcessor::WiFiEvent(WiFiEvent_t event, system_event_info_t info){
 
 
 void TimeProcessor::timeavailable(){
-    LOG(println, F("TIME: Time adjusted"));
+    LOG(println, F("UI TIME: Time adjusted"));
     isSynced = true;
     if(_timecallback)
         _timecallback();
@@ -303,12 +301,13 @@ void TimeProcessor::getDateTimeString(String &buf, const time_t _tstamp){
  * установка текущего смещения от UTC в секундах
  */
 void TimeProcessor::setOffset(const int val){
-    LOG(printf_P, PSTR("Set time zone offset to: %d\n"), val);
+    LOG(printf_P, PSTR("UI Time: Set time zone offset to: %d\n"), val);
 
     #ifdef ESP8266
         sntp_set_timezone_in_seconds(val);
     #elif defined ESP32
-        setTimeZone(val, 0);
+        //setTimeZone((long)val, 0);    // this breaks linker in some weird way
+        configTime((long)val, 0, NTP1ADDRESS, NTP2ADDRESS, "");
     #endif
 
     // в правилах TZSET смещение имеет обратный знак (TZ-OffSet=UTC)

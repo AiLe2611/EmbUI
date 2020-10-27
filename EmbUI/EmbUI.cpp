@@ -14,6 +14,7 @@
 #define PUB_PERIOD 10000            // Publication period, ms
 #define SECONDARY_PERIOD 300U       // second handler timer, ms
 
+
 EmbUI embui;
 
 void section_main_frame(Interface *interf, JsonObject *data) {}
@@ -206,11 +207,17 @@ void EmbUI::init(){
         e3 = WiFi.onStationModeConnected(std::bind(&EmbUI::onSTAConnected, this, std::placeholders::_1));
     #elif defined ESP32
         WiFi.onEvent(std::bind(&EmbUI::WiFiEvent, this, std::placeholders::_1, std::placeholders::_2));
+        //WiFi.onEvent(std::bind(&TimeProcessor::WiFiEvent, &timeProcessor, std::placeholders::_1, std::placeholders::_2));
     #endif
 
     // восстанавливаем настройки времени
     timeProcessor.tzsetup(param(FPSTR(P_TZSET)).c_str());
     timeProcessor.setcustomntp(param(FPSTR(P_userntp)).c_str());
+
+#ifdef ESP32
+    WiFi.mode(WIFI_AP_STA);
+    WiFi.begin();
+#endif
 }
 
 void EmbUI::begin(){
@@ -221,18 +228,13 @@ void EmbUI::begin(){
     ssdp_begin(); LOG(println, F("Start SSDP"));
 #endif
 
+/*
 #ifdef ESP32
-  //server.addHandler(new SPIFFSEditor(LittleFS, http_username,http_password));
+  server.addHandler(new SPIFFSEditor(LittleFS, http_username,http_password));
 #elif defined(ESP8266)
   //server.addHandler(new SPIFFSEditor(http_username,http_password, LittleFS));
-  //server.addHandler(new SPIFFSEditor(F("esp8266"),F("esp8266"), LittleFS));
+  server.addHandler(new SPIFFSEditor(F("esp8266"),F("esp8266"), LittleFS));
 #endif
-
-/*
-    // Добавлено для отладки, т.е. возможности получить JSON интерфейса для анализа
-    server.on(PSTR("/echo"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
-        // embui.send(request);
-    });
 */
 
     server.on(PSTR("/version"), HTTP_ANY, [this](AsyncWebServerRequest *request) {

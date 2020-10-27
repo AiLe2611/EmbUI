@@ -6,7 +6,6 @@
 //bool _wifi_connected = false;
 #include "EmbUI.h"
 #include "wi-fi.h"
-#include "timeProcessor.h"
 
 #ifdef ESP8266
 #include "user_interface.h"
@@ -79,27 +78,36 @@ void EmbUI::WiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info)   // , WiFiEventI
         break;
     case SYSTEM_EVENT_STA_CONNECTED:
         LOG(println, F("UI WiFi: Station connected"));
+        if(_cb_STAConnected)
+            _cb_STAConnected();        // execule callback
         break;
     case SYSTEM_EVENT_STA_GOT_IP:
         WiFi.mode(WIFI_STA);            // Shutdown internal Access Point
-        LOG(printf_P, PSTR("Connected to: %s, got IP: "), WiFi.SSID().c_str());  // IPAddress(info.got_ip.ip_info.ip.addr)
+        LOG(printf_P, PSTR("UI WiFi: Connected to '%s', IP: "), WiFi.SSID().c_str());  // IPAddress(info.got_ip.ip_info.ip.addr)
         LOG(println, WiFi.localIP());
 
         if(WiFi.getMode() != WIFI_MODE_STA){    // Switch to STA only mode once IP obtained
             WiFi.mode(WIFI_MODE_STA);         
             LOG(println, F("UI WiFi: switch to STA mode"));
         }
+        if(_cb_STAGotIP)
+            _cb_STAGotIP();        // execule callback
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
         LOG(printf_P, PSTR("UI WiFi: Disconnected, reason: %d\n"), info.disconnected.reason);
+        // https://github.com/espressif/arduino-esp32/blob/master/tools/sdk/include/esp32/esp_wifi_types.h
         if(WiFi.getMode() != WIFI_MODE_APSTA){
             WiFi.mode(WIFI_MODE_APSTA);         // Enable internal AP if station connection is lost
-            LOG(println, F("Enabling internal AP"));
+            LOG(println, F("UI WiFi: Enabling internal AP"));
         }
+        if(_cb_STADisconnected)
+            _cb_STADisconnected();        // execule callback
         break;
     default:
         break;
     }
+    // handle network events for timelib
+    timeProcessor.WiFiEvent(event, info);
 }
 #endif  //ESP32
 
